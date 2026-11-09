@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Invoice Triage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=block" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1e2a2f;
+    --pencil: #5c6a64;
+    --rule: #cfe0d4;
+    --rule-strong: #a3c2ad;
+    --hold: #b23a30;
+    --clear: #2e6a4e;
+    --accent: #1f5c78;
+    --serif: "Source Serif 4", Charter, Georgia, serif;
+    --sans: "IBM Plex Sans", "Liberation Sans", Arial, sans-serif;
+    --mono: "IBM Plex Mono", "DejaVu Sans Mono", monospace;
+  }
+
+  @page {
+    size: letter;
+    margin: 0.85in 0.95in 0.8in 0.62in;
+    @top-left { content: "Invoice Triage"; font: 500 7.5pt var(--sans); color: var(--pencil); }
+    @top-right { content: "Prepared for Waverock Holdings"; font: 400 7.5pt var(--sans); color: var(--pencil); }
+    @bottom-right { content: counter(page) " of " counter(pages); font: 400 7.5pt var(--sans); color: var(--pencil); }
+  }
+  @page :first {
+    @top-left { content: none; } @top-right { content: none; } @bottom-right { content: none; }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; padding-left: 0.43in; color: var(--ink);
+    font: 400 10.25pt/1.52 var(--serif);
+    font-optical-sizing: auto;
+    hyphens: auto;
+  }
+
+  /* The ledger pad's red margin rule, repeated on every page. */
+  .margin-rule {
+    position: fixed; top: 0; bottom: 0; left: 0.13in; width: 3.5px;
+    border-left: 0.6pt solid #d9958f; border-right: 0.6pt solid #d9958f;
+  }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; line-height: 1.2; margin: 0; break-after: avoid; }
+  h1 { font-size: 19pt; letter-spacing: -0.01em; margin-bottom: 14pt; }
+  h2 { font-size: 12.5pt; margin: 20pt 0 6pt; }
+  h3 { font-size: 10.5pt; margin: 14pt 0 4pt; }
+  p { margin: 0 0 8pt; max-width: 5.6in; orphans: 3; widows: 3; }
+  ul, ol { margin: 0 0 8pt; padding-left: 16pt; max-width: 5.6in; }
+  li { margin-bottom: 3pt; }
+  strong { font-weight: 600; }
+  .lede { font-size: 11.25pt; line-height: 1.5; max-width: 5.7in; }
+  .muted { color: var(--pencil); }
+  code, .cmd { font-family: var(--mono); font-size: 8.5pt; }
+  section { break-before: page; }
+  section.flow { break-before: auto; }
+  section.flow > h1 { margin-top: 30pt; }
+
+  /* ---------- cover ---------- */
+  .cover { height: 9.2in; display: flex; flex-direction: column; break-after: page; }
+  .cover .for { font: 500 9pt var(--sans); color: var(--pencil); margin-top: 0.4in; }
+  .cover h1 {
+    font-size: 44pt; font-weight: 600; letter-spacing: -0.02em; line-height: 1;
+    margin: 0.55in 0 14pt;
+  }
+  .cover .sub { font-size: 13pt; line-height: 1.45; max-width: 4.9in; color: var(--ink); }
+  .glance { margin-top: 0.75in; width: 4.6in; }
+  .glance caption { text-align: left; font: 600 9pt var(--sans); padding-bottom: 6pt; caption-side: top; }
+  .glance td { font: 400 9.5pt var(--sans); padding: 5pt 8pt 5pt 0; border-bottom: 0.6pt solid var(--rule); }
+  .glance td.v { text-align: right; font-variant-numeric: tabular-nums; border-left: 0.6pt solid var(--rule); padding-left: 10pt; padding-right: 0; white-space: nowrap; }
+  .glance tr.total td { font-weight: 600; border-bottom: 0; padding-top: 7pt; }
+  .glance tr.total td.v { border-bottom: 2.4pt double var(--ink); }
+  .cover .by { margin-top: auto; font: 400 9pt/1.5 var(--sans); color: var(--pencil); }
+  .cover .by strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- tables ---------- */
+  table.t { width: 100%; border-collapse: collapse; margin: 6pt 0 12pt; font: 400 8.6pt/1.4 var(--sans); }
+  table.t th, table.t td { text-align: left; vertical-align: top; padding: 4.5pt 7pt; border-left: 0.6pt solid var(--rule); }
+  table.t th:first-child, table.t td:first-child { border-left: 0; padding-left: 0; }
+  table.t thead th { font-weight: 600; color: var(--pencil); border-bottom: 2.2pt double var(--rule-strong); }
+  table.t tbody tr { border-bottom: 0.6pt solid var(--rule); break-inside: avoid; }
+  table.t .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.t .nw { white-space: nowrap; }
+  table.t td.m { white-space: nowrap; border-right: 2.4pt double #e2aaa5; }
+  .hold { color: var(--hold); font-weight: 600; }
+  .ok { color: var(--clear); }
+  table.appendix { font-size: 7.6pt; }
+  table.appendix td, table.appendix th { padding: 3.2pt 5pt; }
+  table.appendix .file { font-weight: 500; }
+  table.appendix .why { color: var(--pencil); margin-top: 1.5pt; }
+
+  /* ---------- steps ---------- */
+  ol.steps { list-style: none; padding: 0; counter-reset: step; max-width: none; }
+  ol.steps > li {
+    counter-increment: step; display: grid; grid-template-columns: 0.42in 1fr; gap: 0 4pt;
+    margin-bottom: 9pt; break-inside: avoid;
+  }
+  ol.steps > li::before {
+    content: counter(step); font: 600 15pt/1.05 var(--serif); color: var(--accent);
+  }
+  ol.steps > li p { margin-bottom: 3pt; max-width: 5.3in; }
+  ol.steps > li h3 { margin: 0 0 2pt; }
+
+  /* ---------- figures ---------- */
+  figure { margin: 8pt 0 14pt; break-inside: avoid; }
+  figcaption { font: 400 8.2pt/1.4 var(--sans); color: var(--pencil); margin-top: 5pt; max-width: 5.6in; }
+  figcaption strong { color: var(--ink); font-weight: 600; }
+  .crop {
+    overflow: hidden; border: 0.6pt solid var(--rule-strong); border-radius: 3pt;
+    aspect-ratio: calc(var(--w) / var(--h));
+  }
+  .crop img { display: block; width: 100%; margin-top: calc(var(--top) / var(--w) * -100%); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; align-items: start; }
+  .pair .crop { border-radius: 2pt; }
+
+  .callout {
+    border-left: 2pt solid var(--accent); padding: 2pt 0 2pt 11pt; margin: 10pt 0 12pt; max-width: 5.6in;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18pt; break-inside: avoid; }
+  .two h3 { margin-top: 0; }
+  .two ul { padding-left: 13pt; }
+
+  pre.cmd {
+    font-family: var(--mono); font-size: 8.3pt; line-height: 1.55; background: #f4f7f5;
+    border: 0.6pt solid var(--rule); border-radius: 3pt; padding: 8pt 10pt; margin: 6pt 0 12pt;
+    white-space: pre-wrap; break-inside: avoid;
+  }
+  svg text { font-family: var(--sans); }
+</style>
+</head>
+<body>
+<div class="margin-rule" aria-hidden="true"></div>
+
+<!-- ======================= COVER ======================= -->
+<div class="cover">
+  <p class="for">Prepared for Waverock Holdings, Finance &amp; Operations</p>
+  <h1>Invoice Triage</h1>
+  <p class="sub">What the weekly vendor-invoice check does, how to run it, and how it is built.</p>
+
+  <table class="glance">
+    <caption>The 30-file exercise folder, checked {{run_date}}</caption>
+    <tr><td>Files read</td><td class="v">{{files}}</td></tr>
+    <tr><td>Held for review before payment</td><td class="v">{{held}}</td></tr>
+    <tr><td>No issues found</td><td class="v">{{clear}}</td></tr>
+    <tr><td>Time for a fresh run</td><td class="v">about 30 seconds</td></tr>
+    <tr><td>Amount held for review (USD equivalent)</td><td class="v">{{usd_held}}</td></tr>
+    <tr class="total"><td>All invoices (USD equivalent)</td><td class="v">{{usd_total}}</td></tr>
+  </table>
+
+  <p class="by"><strong>Finance &amp; Operations Associate exercise</strong><br>November 8, 2026</p>
+</div>
+
+<!-- ======================= SUMMARY ======================= -->
+<section style="break-before: auto">
+  <h1>Summary</h1>
+  <p class="lede">Each week accounts payable receives a folder of vendor invoices in mixed formats and has
+    to decide what can go forward for payment and what a person should look at first. Invoice Triage
+    does the reading and the first check, and it can do it on its own every Monday morning.</p>
+  <p>For every file it produces one row: file, vendor, invoice number, due date, amount, a flag, and the
+    reason for the flag. On the exercise folder it read all {{files}} files correctly, including the scanned
+    PDF, the phone photo and both emails, and held {{held}} invoices for review.</p>
+
+  <h2>What it found</h2>
+  <table class="t">
+    <thead><tr><th>Reason held</th><th class="n">Invoices</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Over the $5,000 approval threshold</td><td class="n">{{over}}</td>
+        <td>Includes Fathom Research: €4,700 looks under the limit but is about $5,405 once converted.</td></tr>
+      <tr><td>Duplicate</td><td class="n">{{dupes}}</td>
+        <td>Keystone re-sent invoice KP-2026-0917 by email. Redwood's scan is the same invoice as its PDF,
+          even though the scan prints the number as RW-1O41, with a letter O.</td></tr>
+      <tr><td>Arithmetic error</td><td class="n">{{math}}</td>
+        <td>Summit Office Supply: the lines add up to $1,284.50 but the total due is $1,384.50, a $100 overcharge.</td></tr>
+      <tr><td>Foreign currency</td><td class="n">{{fx}}</td>
+        <td>Fathom bills in euros, payable by international wire to a German bank account.</td></tr>
+      <tr><td>Charge for another company</td><td class="n">2</td>
+        <td>Both Atlas Recruiting placement fees are for roles at other companies (Grasp, PlanIt Geo).</td></tr>
+    </tbody>
+  </table>
+  <p class="muted" style="font-size:9pt">Counts overlap: an invoice can be held for more than one reason. Appendix A lists every file.</p>
+
+  <h2>How it decides</h2>
+  <div class="callout">
+    <p><strong>Claude reads; fixed rules decide.</strong> Reading a scan, a photo or a covering email is
+      the part ordinary code does badly, so Claude does it. Whether an invoice is held is decided by
+      plain, tested rules. The same folder gives the same answer every time, and Claude can add a
+      reason to hold an invoice but can never remove one.</p>
+  </div>
+
+  <h2>What it takes to run</h2>
+  <p>Python 3.10 or newer and Claude Code, signed in; nothing else is installed. A fresh run of 30 files
+    takes about 30 seconds and roughly $0.30 of Claude usage, and unchanged files are never read twice.
+    Nothing is paid, approved or sent anywhere: the tool only prepares the list for a person.</p>
+</section>
+
+<!-- ======================= STEP BY STEP ======================= -->
+<section>
+  <h1>What it does, step by step</h1>
+
+  <figure>
+    <svg viewBox="0 0 650 228" width="100%" role="img" aria-label="Flow: inbox, collect, read, decide, report; cache and ledger below">
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#5c6a64"/>
+        </marker>
+      </defs>
+      <!-- inbox -->
+      <rect x="1" y="30" width="110" height="74" rx="4" fill="#f4f7f5" stroke="#a3c2ad"/>
+      <text x="12" y="52" font-size="11" font-weight="600" fill="#1e2a2f">Inbox</text>
+      <text x="12" y="70" font-size="9.5" fill="#5c6a64">Drive folder,</text>
+      <text x="12" y="84" font-size="9.5" fill="#5c6a64">or chosen files</text>
+      <!-- collect -->
+      <rect x="135" y="30" width="110" height="74" rx="4" fill="#fff" stroke="#a3c2ad"/>
+      <text x="146" y="52" font-size="11" font-weight="600" fill="#1e2a2f">1  Collect</text>
+      <text x="146" y="70" font-size="9.5" fill="#5c6a64">new files only;</text>
+      <text x="146" y="84" font-size="9.5" fill="#5c6a64">emails split</text>
+      <!-- read -->
+      <rect x="269" y="30" width="110" height="74" rx="4" fill="#fff" stroke="#1f5c78" stroke-width="1.4"/>
+      <text x="280" y="52" font-size="11" font-weight="600" fill="#1f5c78">2  Read</text>
+      <text x="280" y="70" font-size="9.5" fill="#5c6a64">Claude, six at</text>
+      <text x="280" y="84" font-size="9.5" fill="#5c6a64">a time, fixed fields</text>
+      <!-- decide -->
+      <rect x="403" y="30" width="110" height="74" rx="4" fill="#fff" stroke="#2e6a4e" stroke-width="1.4"/>
+      <text x="414" y="52" font-size="11" font-weight="600" fill="#2e6a4e">3  Decide</text>
+      <text x="414" y="70" font-size="9.5" fill="#5c6a64">tested rules set</text>
+      <text x="414" y="84" font-size="9.5" fill="#5c6a64">flag and reason</text>
+      <!-- report -->
+      <rect x="537" y="30" width="110" height="74" rx="4" fill="#f4f7f5" stroke="#a3c2ad"/>
+      <text x="548" y="52" font-size="11" font-weight="600" fill="#1e2a2f">4  Report</text>
+      <text x="548" y="70" font-size="9.5" fill="#5c6a64">review list,</text>
+      <text x="548" y="84" font-size="9.5" fill="#5c6a64">Excel and CSV</text>
+      <!-- arrows -->
+      <g stroke="#5c6a64" stroke-width="1.1" marker-end="url(#a)">
+        <line x1="112" y1="67" x2="132" y2="67"/><line x1="246" y1="67" x2="266" y2="67"/>
+        <line x1="380" y1="67" x2="400" y2="67"/><line x1="514" y1="67" x2="534" y2="67"/>
+      </g>
+      <!-- cache -->
+      <rect x="269" y="150" width="110" height="52" rx="4" fill="#fff" stroke="#cfe0d4" stroke-dasharray="3 2"/>
+      <text x="280" y="171" font-size="10" font-weight="600" fill="#1e2a2f">Cache</text>
+      <text x="280" y="187" font-size="9" fill="#5c6a64">answers by file contents</text>
+      <line x1="324" y1="105" x2="324" y2="147" stroke="#a3c2ad" stroke-dasharray="3 2"/>
+      <!-- ledger -->
+      <rect x="403" y="150" width="244" height="52" rx="4" fill="#fff" stroke="#cfe0d4" stroke-dasharray="3 2"/>
+      <text x="414" y="171" font-size="10" font-weight="600" fill="#1e2a2f">Ledger</text>
+      <text x="414" y="187" font-size="9" fill="#5c6a64">every invoice ever checked, for duplicates across weeks</text>
+      <line x1="458" y1="105" x2="458" y2="147" stroke="#a3c2ad" stroke-dasharray="3 2"/>
+      <path d="M190 105 V 218 H 525 V 203" fill="none" stroke="#a3c2ad" stroke-dasharray="3 2"/>
+      <!-- legend -->
+      <rect x="1" y="150" width="10" height="10" fill="none" stroke="#1f5c78" stroke-width="1.4"/>
+      <text x="17" y="159" font-size="9" fill="#5c6a64">Claude reads</text>
+      <rect x="1" y="168" width="10" height="10" fill="none" stroke="#2e6a4e" stroke-width="1.4"/>
+      <text x="17" y="177" font-size="9" fill="#5c6a64">Code decides</text>
+    </svg>
+    <figcaption><strong>Figure 1.</strong> One run. The weekly run is the same path; Collect skips files
+      already in the ledger, and Decide compares each new invoice against it.</figcaption>
+  </figure>
+
+  <ol class="steps">
+    <li><div>
+      <h3>Collect</h3>
+      <p>Downloads from the shared Drive folder any file it does not already have, or takes the files a
+        clerk chose on the computer. Emails are split into the message and its attachments. A file of an
+        unsupported type or over 25 MB is not dropped: it becomes a held row that says so.</p>
+      <p class="muted">In this folder: {{pdf_text}} digital PDFs, {{pdf_scan}} scanned PDF, {{image}} images and {{email}} emails.</p>
+    </div></li>
+    <li><div>
+      <h3>Read</h3>
+      <p>Each document goes to Claude with a fixed list of fields to fill: vendor, invoice number, invoice
+        date exactly as printed, due date if printed, payment terms, currency, each line item, total,
+        who it is billed to, any bank details, what a covering email says, whether the document is a scan,
+        and anything a careful clerk would want checked. Six documents are read at a time.</p>
+      <p>Claude has no tools and sees nothing but the document. Answers are kept by file contents, so a
+        file that has not changed is never read or paid for twice.</p>
+    </div></li>
+    <li><div>
+      <h3>Decide</h3>
+      <p>The rules on the next page set the flag and write the reason. Due dates that are not printed are
+        worked out from the payment terms ({{printed_due}} were printed in this folder; the rest came from
+        terms such as Net 30). Duplicates are checked within the folder and against every invoice checked
+        in earlier weeks.</p>
+    </div></li>
+    <li><div>
+      <h3>Report</h3>
+      <p>The app shows the list with held invoices first. The Excel workbook has an <em>Invoices</em> sheet
+        with the seven requested columns and an <em>Audit</em> sheet with what sits behind each row: the
+        date as printed, the terms, how the due date was set, currency and conversion, source type and
+        Claude's notes. A CSV copy and the updated ledger are saved with it.</p>
+    </div></li>
+  </ol>
+
+  <h2>Who does what</h2>
+  <table class="t">
+    <thead><tr><th style="width:50%">Claude</th><th>Code</th></tr></thead>
+    <tbody>
+      <tr><td>Reads PDFs, scans and photos; copes with any layout</td><td>Applies the $5,000 threshold after currency conversion</td></tr>
+      <tr><td>Reads covering emails for context (“resending as requested”)</td><td>Finds duplicates, including look-alike characters such as O and 0</td></tr>
+      <tr><td>Notices content concerns: changed bank details, charges for another company</td><td>Checks every line and the total</td></tr>
+      <tr><td>Can add a concern to a row</td><td>Sets the flag; a concern from Claude can add a reason but never remove one</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================= RULES ======================= -->
+<section class="flow">
+  <h1>What gets held for review</h1>
+  <table class="t">
+    <thead><tr><th style="width:27%">Rule</th><th style="width:36%">Why it matters</th><th>In this folder</th></tr></thead>
+    <tbody>
+      <tr><td>Amount over $5,000, after converting to US dollars</td><td>Needs approval before payment</td><td>{{over}} invoices, including Fathom at €4,700 ≈ $5,405 (rate set in the configuration: 1.15)</td></tr>
+      <tr><td>Same vendor and invoice number, or same vendor, amount and date</td><td>Paying twice is the most common avoidable loss in accounts payable</td><td>Keystone email resend; Redwood scan of an invoice already received as a PDF</td></tr>
+      <tr><td>Lines do not add up to the total, or a line's quantity × price is wrong</td><td>Overbilling, often by accident</td><td>Summit: $100 over</td></tr>
+      <tr><td>Not billed in US dollars</td><td>Exchange rate and international wire details need confirming</td><td>Fathom (EUR)</td></tr>
+      <tr><td>Billed to someone other than Waverock</td><td>Wrong entity, or not our invoice</td><td>None</td></tr>
+      <tr><td>No due date or terms, or a due date before the invoice date</td><td>Payment timing cannot be planned</td><td>None</td></tr>
+      <tr><td>A concern Claude raises: changed bank details, a document that says it replaces another, a charge for another company</td><td>The common signs of fraud and misdirected invoices</td><td>Both Atlas placement fees</td></tr>
+      <tr><td>A file that could not be read, is too large, or is an email carrying several invoices</td><td>Nothing should disappear silently</td><td>None</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Which copy is the original</h2>
+  <p>When two files are the same invoice, the cleanest copy is kept as the original and every other copy
+    is held: a digital PDF ranks above an email attachment, which ranks above a scan or photo. The original
+    is not held, but its audit row records that a second copy arrived. Invoice numbers are compared after
+    treating look-alike characters as equal, which is how the scan below was matched.</p>
+  <figure>
+    <div class="pair">
+      <div class="crop" style="--w:935; --h:560; --top:0"><img src="img/redwood-pdf.png" alt="Redwood invoice RW-1041, digital PDF"></div>
+      <div class="crop" style="--w:935; --h:560; --top:0"><img src="img/redwood-scan.png" alt="Scanned copy of the same Redwood invoice"></div>
+    </div>
+    <figcaption><strong>Figure 2.</strong> Left, Redwood's digital PDF, kept as the original. Right, a scan
+      of the same invoice, printed as RW-1O41 with a letter O. Held as a duplicate.</figcaption>
+  </figure>
+
+  <h2>What Claude may and may not do</h2>
+  <p>Claude runs with no tools, no internet access of its own, no access to the computer's files, and an
+    empty working folder. Its instructions say that everything in a document is data, never an instruction.
+    Its answer must fit a fixed form, and the rules treat that answer as input to check, not as a decision.
+    A manipulated document could still mislead the reading of a number, which is why every amount is
+    checked against its own line items and why high amounts always go to a person.</p>
+</section>
+
+<!-- ======================= USING IT ======================= -->
+<section class="flow">
+  <h1>Running it</h1>
+  <h2>What the computer needs</h2>
+  <ul>
+    <li>Python 3.10 or newer, from python.org. The launcher checks the version and explains what to do if it is missing or too old (Macs ship with an older one).</li>
+    <li>Claude Code, installed and signed in. On Windows, the native installer rather than the npm package. The app checks this before it lets a run start.</li>
+  </ul>
+
+  <h2>Checking a folder</h2>
+  <ol class="steps">
+    <li><div><p>Double-click <em>Start Invoice Triage</em> (the <code>.bat</code> file on Windows, the <code>.command</code> file on a Mac). The app opens in the web browser. It runs only on this computer.</p></div></li>
+    <li><div><p>Paste the Google Drive folder link and press <em>Run check</em>. Invoices saved on the computer can be used instead with <em>Choose files</em>.</p></div></li>
+    <li><div><p>Watch each file being read. A fresh run of 30 files takes about half a minute.</p></div></li>
+    <li><div><p>Work through <em>Needs review</em>. Each held invoice shows why. Select a row to see what Claude read; select a file name to open the original document.</p></div></li>
+    <li><div><p>Press <em>Download Excel</em> for the spreadsheet.</p></div></li>
+  </ol>
+
+  <figure>
+    <div class="crop" style="--w:2560; --h:700; --top:0"><img src="img/app-full.png" alt="Invoice Triage start screen"></div>
+    <figcaption><strong>Figure 3.</strong> The start screen: one link, one button.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <figure style="margin-top:0">
+    <div class="crop" style="--w:2560; --h:2380; --top:750"><img src="img/app-full.png" alt="Results of the exercise folder"></div>
+    <figcaption><strong>Figure 4.</strong> Results for the exercise folder, held invoices first. The red
+      double rule is the margin of a ledger pad: the status sits in the margin, the reason on the right,
+      and the column of amounts closes with a double-ruled total.</figcaption>
+  </figure>
+  <p>The two words in the margin are deliberate. <em>Review</em> means a person must look before payment.
+    <em>No issues found</em> means none of the rules fired; it is not an approval, and the tool never says
+    an invoice is cleared to pay.</p>
+</section>
+
+<!-- ======================= WEEKLY ======================= -->
+<section>
+  <h1>Every Monday, without anyone</h1>
+  <p class="lede">Turning on <em>Check the Drive folder every Monday at 07:00</em> registers a job with the
+    computer's own scheduler. Nothing extra is installed and nothing has to stay open.</p>
+
+  <table class="t">
+    <thead><tr><th style="width:20%">System</th><th style="width:34%">Scheduler used</th><th>If the computer was off at 07:00</th></tr></thead>
+    <tbody>
+      <tr><td>Windows</td><td>Task Scheduler, without a console window</td><td>Runs as soon as possible afterwards</td></tr>
+      <tr><td>macOS</td><td>launchd (a user LaunchAgent)</td><td>Runs when the Mac wakes</td></tr>
+      <tr><td>Linux</td><td>systemd user timer</td><td>Runs at the next start (Persistent)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What the Monday run does</h2>
+  <ul>
+    <li>Fetches the Drive folder and reads only files it has not seen before, judged by name and contents.</li>
+    <li>Compares every new invoice with the ledger of everything ever checked, so a vendor's resend next month is still caught, even under a new file name.</li>
+    <li>Saves that week's spreadsheet as <em>Weekly results/Invoices &lt;date&gt;.xlsx</em> and shows the result in the app.</li>
+  </ul>
+
+  <h2>When something goes wrong</h2>
+  <ul>
+    <li>A run that cannot finish writes <em>Weekly results/LAST_RUN_FAILED.txt</em>, saying what happened and how to fix it in plain words. The app shows the same message. The note is removed after the next good run.</li>
+    <li>If no file at all can be read, which usually means Claude Code is signed out or the connection is down, the run counts as failed rather than producing an empty list.</li>
+    <li>Only one run happens at a time. A manual check and the Monday job cannot overwrite each other, and a lock left behind by a closed window is cleared automatically.</li>
+  </ul>
+
+  <figure>
+    <div class="crop" style="--w:2560; --h:420; --top:3300"><img src="img/app-full.png" alt="Weekly run switch and last run status"></div>
+    <figcaption><strong>Figure 5.</strong> The weekly switch and the status of the last Monday run.</figcaption>
+  </figure>
+
+  <h2>Taking it off a personal computer</h2>
+  <p>The scheduler approach depends on one computer being on. The same code runs unchanged on a server or
+    in a scheduled GitHub Actions job when an Anthropic API key is provided; Claude is then called in API
+    mode, with no sign-in. For production I would make three changes: read the folder with a Google service
+    account instead of a public link, write results straight into the team's shared Sheet, and post the
+    weekly summary to the AP channel.</p>
+</section>
+
+<!-- ======================= BUILD ======================= -->
+<section class="flow">
+  <h1>How it is built</h1>
+
+  <h2>Design decisions</h2>
+  <p><strong>The AI reads, the code decides.</strong> Every flag comes from rules in one file
+    (<code>rules.py</code>) with unit tests. Claude's answer is input to those rules, never the decision.</p>
+  <p><strong>A locked-down model call.</strong> Each document is sent to the local Claude Code command line
+    with tools, plug-ins and personal settings switched off, in an empty folder, and the answer must match a
+    fixed form. The cache is keyed by file contents and by the exact instructions, so editing the instructions
+    can never return stale answers.</p>
+  <p><strong>Nothing disappears.</strong> A file that cannot be read becomes a held row that says why. Results,
+    cache and ledger are written so that a crash never leaves a half-written file. One run at a time.</p>
+  <p><strong>No installation.</strong> Python's standard library only. The Excel workbook is written directly,
+    without spreadsheet libraries, and cells that start like a formula are neutralised so a vendor's text can
+    never execute in Excel.</p>
+
+  <h2>Components</h2>
+  <table class="t">
+    <thead><tr><th style="width:30%">Part</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>pipeline.py</code></td><td>One run from start to finish; run lock; ledger</td></tr>
+      <tr><td><code>drive.py</code>, <code>ingest.py</code></td><td>Fetch the folder; turn files and emails into what Claude reads; type and size limits</td></tr>
+      <tr><td><code>claude_cli.py</code>, <code>extract.py</code></td><td>Find and call Claude Code safely on each system; the fixed form; the cache</td></tr>
+      <tr><td><code>rules.py</code></td><td>Every flag and every reason</td></tr>
+      <tr><td><code>report.py</code></td><td>Excel, CSV and summary</td></tr>
+      <tr><td><code>scheduler.py</code>, <code>weekly.py</code></td><td>The Monday job on Windows, macOS and Linux; failure notes</td></tr>
+      <tr><td><code>server.py</code>, <code>web/</code></td><td>The local app in the browser</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The local app is private to the computer</h2>
+  <p>It listens only on the computer itself and refuses requests addressed to any other name. Every request
+    must carry a secret created each time the app starts, so another website cannot drive it. The page will
+    not load outside scripts and shows document text as text, never as page code. Uploaded files keep only
+    their name, must be PDF, image or email, and are capped at 25 MB. Only files that belong to a run can be
+    opened from it.</p>
+
+  <h2>How it was checked</h2>
+  <table class="t">
+    <thead><tr><th style="width:44%">Check</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Three fresh runs compared field by field with a hand-checked answer key (invoice number, due date, amount and flag for all 30 files)</td><td>0 mismatches in each run</td></tr>
+      <tr><td>Automated tests</td><td>{{tests}} passing: rules, duplicates, arithmetic, currency, due dates, email handling, scheduler files for all three systems, app security, and a full run end to end</td></tr>
+      <tr><td>Linux scheduler files</td><td>Validated with systemd's own checker</td></tr>
+      <tr><td>Independent review of the plan, before building</td><td>14 changes adopted, among them scan-versus-PDF ranking, the run lock and Windows scheduler settings</td></tr>
+      <tr><td>Independent review of the finished build</td><td>12 findings; 10 fixed, each with a test, among them a stale lock after a closed window and a sign-in check that only checked installation</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================= LIMITS ======================= -->
+<section class="flow">
+  <h1>Limits and next steps</h1>
+  <div class="two">
+    <div>
+      <h3>Known limits</h3>
+      <ul>
+        <li>Tested on Linux. The Windows and macOS paths are written and their scheduler files tested, but they have not yet run on a Windows PC or a Mac.</li>
+        <li>The euro rate is a fixed number in the configuration.</li>
+        <li>All-numeric dates are read as month/day/year; the printed date is kept in the Audit sheet.</li>
+        <li>One row per file; an email carrying several invoices is held for a person to split.</li>
+        <li>A corrected file re-uploaded to Drive under the same name is not fetched again.</li>
+        <li>The Monday run needs the computer on, or catches up at the next start.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Next steps</h3>
+      <ul>
+        <li>Run on a server with an API key; read Drive with a service account; write to the shared Sheet.</li>
+        <li>A vendor master, to hold new vendors and any change of bank details.</li>
+        <li>A daily exchange-rate feed.</li>
+        <li>For digital PDFs, check Claude's total against the PDF's own text as a second, independent reading.</li>
+        <li>A weekly summary posted to the AP channel.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= APPENDIX A ======================= -->
+<section>
+  <h1>Appendix A. Every file in the exercise folder</h1>
+  <table class="t appendix">
+    <thead><tr><th>Status</th><th style="width:44%">File, and why it is held</th><th>Vendor</th><th>Invoice no.</th><th>Due</th><th class="n">Amount</th></tr></thead>
+    <tbody>
+{{appendix}}
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================= APPENDIX B ======================= -->
+<section class="flow">
+  <h1>Appendix B. Reference</h1>
+  <h2>Command line</h2>
+  <p>Everything the app does can also be run from a terminal in the project folder.</p>
+<pre class="cmd">python3 -m invoice_triage                                 open the app
+python3 -m invoice_triage run --drive &lt;folder link&gt;      check a Drive folder
+python3 -m invoice_triage run --folder &lt;path&gt;            check a local folder
+python3 -m invoice_triage run --drive &lt;link&gt; --only-new  weekly behaviour, by hand
+python3 -m invoice_triage weekly                          what the Monday job runs
+python3 -m unittest discover -s tests -t .                run the tests</pre>
+  <h2>Settings</h2>
+  <p><code>config.json</code> holds the approval threshold, exchange rates, the company names accepted as
+    the bill-to, the Claude model and how many documents are read at once.</p>
+  <h2>Where things are saved</h2>
+  <table class="t">
+    <thead><tr><th style="width:34%">Folder</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code>runs/&lt;date and time&gt;/</code></td><td>Each run: the Excel workbook, CSV, summary and the full results</td></tr>
+      <tr><td><code>Weekly results/</code></td><td>Each Monday's workbook, and a failure note if a run could not finish</td></tr>
+      <tr><td><code>state/</code></td><td>The ledger, the cache, downloaded Drive files and the app's settings</td></tr>
+    </tbody>
+  </table>
+</section>
+</body>
+</html>

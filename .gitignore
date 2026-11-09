@@ -1,0 +1,8 @@
+__pycache__/
+state/
+runs/
+Weekly results/
+.env
+docs/overview/overview.html
+.DS_Store
+*.bak/

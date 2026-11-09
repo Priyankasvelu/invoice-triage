@@ -1,0 +1,9 @@
+{
+  "company_names": ["Waverock Holdings LLC", "Waverock Holdings"],
+  "approval_threshold_usd": 5000,
+  "fx_to_usd": {"USD": 1.0, "EUR": 1.15, "GBP": 1.30, "CAD": 0.72},
+  "model": "sonnet",
+  "workers": 6,
+  "timeout_s": 180,
+  "retries": 1
+}

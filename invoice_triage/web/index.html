@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="app-token" content="{{TOKEN}}">
+  <title>Invoice check</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap masthead-inner">
+      <p class="wordmark">Invoice check <span>Accounts payable, Waverock Holdings</span></p>
+      <p class="schedule-line" id="scheduleLine"></p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="intake" aria-labelledby="intakeTitle">
+      <h1 id="intakeTitle">Check this week's invoices</h1>
+      <p class="lede">Claude reads every invoice in the folder: PDFs, scans, photos and emails.
+        The rules then hold anything that needs a person before it is paid: amounts over
+        <span id="thresholdText">$5,000</span>, possible duplicates, totals that don't add up,
+        and foreign currency.</p>
+
+      <div id="notice" class="notice" role="alert" hidden></div>
+
+      <form id="driveForm" class="drive-form" novalidate>
+        <label for="driveLink">Google Drive folder link</label>
+        <div class="field-row">
+          <input id="driveLink" name="driveLink" type="url" inputmode="url" autocomplete="off"
+                 spellcheck="false" placeholder="https://drive.google.com/drive/folders/…">
+          <button type="submit" class="button primary" id="runButton">Run check</button>
+        </div>
+      </form>
+      <p class="alt">Invoices saved on this computer?
+        <label class="file-pick">Choose files<input type="file" id="filePick" multiple
+          accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.eml"></label></p>
+    </section>
+
+    <section id="progress" class="progress" aria-live="polite" hidden>
+      <h2 id="progressTitle">Starting</h2>
+      <p id="progressDetail" class="muted"></p>
+      <div class="bar" role="progressbar" aria-labelledby="progressTitle" aria-valuemin="0"
+           aria-valuemax="100" aria-valuenow="0" id="bar"><span id="barFill"></span></div>
+      <ol id="fileList" class="file-list"></ol>
+    </section>
+
+    <section id="results" class="results" hidden aria-labelledby="resultsTitle">
+      <div class="results-head">
+        <div>
+          <h2 id="resultsTitle"></h2>
+          <p id="resultsLine" class="results-line"></p>
+        </div>
+        <div class="actions">
+          <a id="dlExcel" class="button primary" href="#">Download Excel</a>
+          <a id="dlCsv" class="button" href="#">Download CSV</a>
+          <button id="openFolder" class="button" type="button">Show in folder</button>
+        </div>
+      </div>
+
+      <div class="filters" role="group" aria-label="Show">
+        <button type="button" class="filter" data-filter="review" aria-pressed="true"></button>
+        <button type="button" class="filter" data-filter="ok" aria-pressed="false"></button>
+        <button type="button" class="filter" data-filter="all" aria-pressed="false"></button>
+      </div>
+
+      <div class="sheet">
+        <table>
+          <thead>
+            <tr>
+              <th class="margin" scope="col"><span class="visually-hidden">Status</span></th>
+              <th scope="col">File</th>
+              <th scope="col">Vendor</th>
+              <th scope="col">Invoice no.</th>
+              <th scope="col">Due</th>
+              <th scope="col" class="num">Amount</th>
+              <th scope="col">Why</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+          <tfoot>
+            <tr>
+              <td class="margin"></td>
+              <td colspan="4" id="totalLabel"></td>
+              <td class="num total" id="totalAmount"></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="muted small">Select a row for the details Claude read. Select a file name to open the original.</p>
+    </section>
+
+    <section class="weekly" aria-labelledby="weeklyTitle">
+      <h2 id="weeklyTitle">Weekly run</h2>
+      <label class="switch">
+        <input type="checkbox" id="scheduleToggle" role="switch">
+        <span class="track" aria-hidden="true"></span>
+        <span>Check the Drive folder every Monday at 07:00</span>
+      </label>
+      <p class="muted">Only files that are new since the last check are read, and each one is compared
+        with everything checked before, so a resent invoice is still caught. The computer has to be on;
+        if it was off at 07:00 the check runs the next time it starts. Each week's spreadsheet is also
+        saved in the "Weekly results" folder.</p>
+      <p id="weeklyStatus" class="weekly-status"></p>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <p>Claude reads the documents; fixed rules decide what is held. Nothing is paid or sent anywhere:
+      this only prepares the list for a person to review.</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
